@@ -7,56 +7,73 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
-<project name="Template" default="default" basedir=".">
+<project name="Template" default="jar" basedir=".">
     <description>Builds, tests, and runs the project Template.</description>
-    <import file="nbproject/build-impl.xml"/>
-    
+
+    <path id="classpath">
+        <fileset dir="." includes="junit-4.10.jar"/>     
+        <pathelement path="classes/"/>
+    </path>
+   
     <target name="init">
       <tstamp/>
-      <property name="src" location="src"/>
+      <echo>${ant.home}</echo>
+      <property name="src" location="src/"/>
       <property name="classes" location="classes"/>
-      <property name="doc" location="doc"/>
+      <property name="testclasses" location="testclasses/"/>
+      <property name="reports" location="reports"/>
+      <property name="test" location="test"/>
+      <property name="docs" location="docs/"></property>
       <mkdir dir="classes"/>
-      <mkdir dir="doc"/>
+      <mkdir dir="testclasses"/>
+      <mkdir dir="reports"/>
+      <mkdir dir="docs"/>
     </target>
   
-    <target name="fetch" depends="init">
+    <target name="fetch">
       <exec executable="git">
         <arg value="clone"/>
-        <arg value="https://github.com/Miikaar/Template"/>
+        <arg value="https://github.com/Miikaar/Template/"/>
       </exec>
     </target>
+    
 
-    <target name="compile" depends="fetch" description="compile the source">
-        <javac srcdir="${src}" destdir="${classes}"/>
+    <target name="compile" depends="fetch, init">
+        <javac classpathref="classpath" includeantruntime="false" fork="yes" srcdir="${src}" destdir="${classes}"/>
+        <javac classpathref="classpath" includeantruntime="false" fork="yes" srcdir="${test}" destdir="${testclasses}"/>
+    </target>    
+
+
+    <target name="test" depends="compile">
+
+        <junit printsummary="yes" haltonerror="false" haltonfailure="false" showoutput="yes">
+            <classpath>
+                <pathelement path="junit-4.10.jar"/>
+                <pathelement path= "${testclasses}"/>
+                <pathelement path= "${classes}"/>
+            </classpath>
+
+            <batchtest fork="yes" todir="${reports}">
+                <formatter type="xml"/>
+                <fileset dir="${testclasses}">
+                    <include name="**/*.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target> 
+
+    <target name="clean" depends="init">
+        <delete dir="${classes}"/>
+        <delete dir="${testclasses}"/>
     </target>
 
-    <target name="jar" depends="compile">
-      <jar destfile="Template_${DSTAMP}.jar"/>
+    <target name="jar" depends="compile, test, docs">
+      <jar destfile="Template_${DSTAMP}.jar" basedir="${classes}">
+      </jar>
     </target>
 
-    <target name="test" depends="jar">
-      <taskdef name="junit" classpathref="classpath" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"/>
-      <junit printsummary="yes" haltonfailure="yes" showoutput="yes" >
-        <classpath>
-          <pathelement path="${build}"/>
-        </classpath>
-        <batchtest fork="yes" todir="${reports}/raw/">
-          <formatter type="xml"/>
-          <fileset dir="${src}">
-            <include name="**/*Test*.java"/>
-          </fileset>
-        </batchtest>
-      </junit>
-    </target>
-
-    <target name="docs" depends="init" description="generate documentation">
-      <javadoc sourcepath="${src}" destdir="${doc}"/>
-    </target>
-
-    <target name="clean">
-      <delete dir="${classes}"/>
-      <delete dir="src"/>
+    <target name="docs" depends="init, test" description="generate documentation">
+      <javadoc sourcepath="${src}" destdir="${docs}"/>
     </target>
     <!--
 
