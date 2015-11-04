@@ -10,6 +10,54 @@
 <project name="Template" default="default" basedir=".">
     <description>Builds, tests, and runs the project Template.</description>
     <import file="nbproject/build-impl.xml"/>
+    
+    <target name="init">
+      <tstamp/>
+      <property name="src" location="src"/>
+      <property name="classes" location="classes"/>
+      <property name="doc" location="doc"/>
+      <mkdir dir="classes"/>
+      <mkdir dir="doc"/>
+    </target>
+  
+    <target name="fetch" depends="init">
+      <exec executable="git">
+        <arg value="clone"/>
+        <arg value="https://github.com/Miikaar/Template"/>
+      </exec>
+    </target>
+
+    <target name="compile" depends="fetch" description="compile the source">
+        <javac srcdir="${src}" destdir="${classes}"/>
+    </target>
+
+    <target name="jar" depends="compile">
+      <jar destfile="Template_${DSTAMP}.jar"/>
+    </target>
+
+    <target name="test" depends="jar">
+      <taskdef name="junit" classpathref="classpath" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"/>
+      <junit printsummary="yes" haltonfailure="yes" showoutput="yes" >
+        <classpath>
+          <pathelement path="${build}"/>
+        </classpath>
+        <batchtest fork="yes" todir="${reports}/raw/">
+          <formatter type="xml"/>
+          <fileset dir="${src}">
+            <include name="**/*Test*.java"/>
+          </fileset>
+        </batchtest>
+      </junit>
+    </target>
+
+    <target name="docs" depends="init" description="generate documentation">
+      <javadoc sourcepath="${src}" destdir="${doc}"/>
+    </target>
+
+    <target name="clean">
+      <delete dir="${classes}"/>
+      <delete dir="src"/>
+    </target>
     <!--
 
     There exist several targets which are by default empty and which can be 
